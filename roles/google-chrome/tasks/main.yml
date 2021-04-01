@@ -1,0 +1,38 @@
+- name: "Google Chrome | aptファイルの存在をチェックする"
+  become: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+  stat:
+    path: "{{ google_chrome.apt_file.path }}"
+  register: google_chrome_apt_file
+
+- block:
+
+  - name: "Google Chrome | キーを追加する"
+    become: yes
+    ignore_errors: "{{ ansible_check_mode }}"
+    shell: wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+
+  - name: "Google Chrome | リポジトリを追加する"
+    become: yes
+    ignore_errors: "{{ ansible_check_mode }}"
+    copy:
+      content: "deb http://dl.google.com/linux/chrome/deb/ stable main"
+      dest: "{{ google_chrome.apt_file.path }}"
+      owner: root 
+      group: root
+      mode: "0644"
+
+  - name: "Google Chrome | aptのキャッシュを更新する"
+    become: yes
+    ignore_errors: "{{ ansible_check_mode }}"
+    apt:
+      update_cache: yes
+
+  when: not google_chrome_apt_file.stat.exists
+
+- name: "Google Chrome | インストールする"
+  become: yes
+  ignore_errors: "{{ ansible_check_mode }}"
+  apt:
+    name: google-chrome-stable 
+    state: present
